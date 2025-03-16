@@ -1,4 +1,4 @@
-name: zwxread      
+name: lwxread
 
 on:
   schedule:
@@ -61,7 +61,7 @@ jobs:
         echo "🎉 触发周随机任务"
 
     - name: 🔢 生成READ_NUM
-      run: |  
+      run: |
         # 调试信息
         echo "=== 触发事件分析 ==="
         echo "事件类型: ${{ github.event_name }}"
@@ -89,8 +89,8 @@ jobs:
             '0 9 * * sat,sun')
               NUM=$((RANDOM % 31 + 190))  # 190-220（等效95-110分钟）
               echo "🎉 周末任务 | 范围: 190-220" ;;
-            '0 0 * * sat,sun')  
-              NUM=$((RANDOM % 61 + 120)) # 120-180（等效60-90分钟）  
+            '0 0 * * sat,sun')
+              NUM=$((RANDOM % 61 + 120)) # 120-180（等效60-90分钟）
               echo "🎰 周随机任务 | 范围: 120-180" ;;
             *)
               # 安全模式：生成默认值
@@ -109,4 +109,4 @@ jobs:
       run: |
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
-        python main.py  
+        python main.py
