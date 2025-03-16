@@ -26,7 +26,7 @@ cookies = {
     'RK': 'oxEY1bTnXf',
     'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
     'pac_uid': '0_e63870bcecc18',
-    'iip': '0',
+    'iip': '0'，  
     '_qimei_uuid42': '183070d3135100ee797b08bc922054dc3062834291',
     'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',
     'wr_gender': '0',
@@ -44,21 +44,21 @@ headers = {
 建议保留区域|默认读三体，其它书籍自行测试时间是否增加
 """
 data = {
-    "appId": "wb182564874663h152492176",
+    "appId": "wb182564874663h1964571299",
     "b": "ce032b305a9bc1ce0b0dd2a",
-    "c": "7cb321502467cbbc409e62d",
-    "ci": 70,
+    "c": "5f9323e026e5f93f9835418",
+    "ci": 25,
     "co": 0,
-    "sm": "[插图]第三部广播纪元7年，程心艾AA说",
-    "pr": 74,
-    "rt": 30,
-    "ts": 1727660516749,
-    "rn": 31,
-    "sg": "991118cc229871a5442993ecb08b5d2844d7f001dbad9a9bc7b2ecf73dc8db7e",
-    "ct": 1727660516,
-    "ps": "b1d32a307a4c3259g016b67",
-    "pc": "080327b07a4c3259g018787",
-}
+    "sm": "汪淼刚刚退出游戏，电话响了，是大史打来的",
+    "pr": 0,
+    "rt": 16,
+    "ts": 1742092953100,
+    "rn": 669,
+    "sg": "dc9eff82151044de146f182907f163ffe5ba7a7e2e462535e6178a93b98a2c7a",
+    "ct": 1742092953,
+    "ps": "85832e107a62390cg012d0e",
+    "pc": "4a4323607a62390cg01436b"
+   }
 
 
 def convert(curl_command):
@@ -66,9 +66,9 @@ def convert(curl_command):
     支持 -H 'Cookie: xxx' 和 -b 'xxx' 两种方式的cookie提取
     """
     # 提取 headers
-    headers_temp = {}
+    headers_temp = {}  
     for match in re.findall(r"-H '([^:]+): ([^']+)'", curl_command):
-        headers_temp[match[0]] = match[1]
+        headers_temp[match[0]] = match[1]  
 
     # 提取 cookies
     cookies = {}
