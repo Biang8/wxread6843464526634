@@ -8,7 +8,7 @@ import hashlib
 import requests
 import urllib.parse
 from push import push
-from config import data, headers, cookies, READ_NUM, PUSH_METHOD, book_mapping  
+from config import data, headers, cookies, READ_NUM, PUSH_METHOD, book_mapping
 
 # 配置日志格式
 logger = logging.getLogger(__name__)
