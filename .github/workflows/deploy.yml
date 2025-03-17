@@ -1,14 +1,19 @@
-name: zwxread
+name: wxread
 
 # 定义工作流的触发条件
 on:
   # 定时任务触发条件
   schedule:
-    - cron: '0 14 * * *'          # 晚间任务：每天22:00触发
-    - cron: '0 21 * * 1-5'        # 早间任务：周一到周五05:00触发
-    - cron: '40 3 * * 1-5'        # 午间任务：周一到周五11:40触发
-    - cron: '0 9 * * sat,sun'     # 周末任务：周六和周日17:00触发
-    - cron: '0 0 * * sat,sun'     # 周随机任务：周末08:00触发
+    # 晚间任务：北京时间每天 22:00 触发，转换为 UTC 时间是 14:00
+    - cron: '0 14 * * *'          # 北京时间：22:00，UTC 时间：14:00
+    # 早间任务：北京时间周一到周五 05:00 触发，转换为 UTC 时间是前一天的 21:00
+    - cron: '0 21 * * 0-4'        # 北京时间：05:00（周一到周五），UTC 时间：21:00（周日到周四）
+    # 午间任务：北京时间周一到周五 11:40 触发，转换为 UTC 时间是 03:40
+    - cron: '40 3 * * 1-5'        # 北京时间：11:40（周一到周五），UTC 时间：03:40（周一到周五）
+    # 周末任务：北京时间周六和周日 17:00 触发，转换为 UTC 时间是 09:00
+    - cron: '0 9 * * sat,sun'     # 北京时间：17:00（周六和周日），UTC 时间：09:00（周六和周日）
+    # 周随机任务：北京时间周末 08:00 触发，转换为 UTC 时间是前一天的 00:00
+    - cron: '0 0 * * sat,sun'     # 北京时间：08:00（周六和周日），UTC 时间：00:00（周五和周六）
   # 手动触发条件
   workflow_dispatch:
     description: 手动触发微信阅读任务
@@ -32,11 +37,25 @@ on:
         type: string
         description: '手动输入自定义延迟时间（分钟，仅手动触发有效）。输入后，任务会延迟相应的分钟数执行。'
         required: false
+      debug_schedule:
+        type: choice
+        description: '选择调试定时任务，开启后按指定任务时间运行'
+        required: false
+        default: '无'
+        options:
+          - 无
+          - 晚间任务
+          - 早间任务
+          - 午间任务
+          - 周末任务
+          - 周随机任务
 
 jobs:
   deploy:
     runs-on: ubuntu-22.04
     environment: AutoRead
+    outputs:
+      week_random_skipped: ${{ steps.week_random_check.outputs.skipped }}
 
     steps:
     - name: 🔧 设置 DNS
@@ -57,20 +76,25 @@ jobs:
 
     - name: 📦 安装依赖
       run: |
-        # 升级 pip 到最新版本
+        echo "::group::📦 安装依赖"
         python -m pip install --upgrade pip
-        # 安装指定版本的依赖库
-        pip install certifi==2024.8.30 charset-normalizer==3.4.0 idna==3.10.0 requests==2.32.3 urllib3==2.2.3
+        pip install --no-cache-dir -r requirements.txt
+        pip list  # 显示安装的依赖
+        echo "::endgroup::"
         # 验证 requests 库是否安装成功
         echo "✅ 依赖安装验证：$(pip list | grep requests)"
 
-    - name: ⏱️ 随机延迟（自动模式或计划模式或手动触发 自动 无自定义延迟）
-      if: (github.event.inputs.mode == '自动' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.custom_delay == '')))
+    - name: ⏱️ 随机延迟（自动模式或计划模式或手动触发调试模式无自定义延迟）
+      if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == '自动' || github.event.inputs.debug_schedule != '无') && github.event.inputs.custom_delay == ''))
       run: |
         # 生成 0 到 20 之间的随机数作为延迟分钟数
-        DELAY=$((RANDOM % 21))
-        echo "⏳ 生成的随机延迟：${DELAY} 分钟"
-        sleep $((DELAY * 60))
+        DELAY_MINUTES=$((RANDOM % 21))
+        # 生成 0 到 59 之间的随机数作为延迟秒数
+        DELAY_SECONDS=$((RANDOM % 60))
+        # 计算总延迟秒数
+        TOTAL_DELAY=$((DELAY_MINUTES * 60 + DELAY_SECONDS))
+        echo "⏳ 生成的随机延迟：${DELAY_MINUTES} 分钟 ${DELAY_SECONDS} 秒"
+        sleep $TOTAL_DELAY
         echo "✅ 延迟执行完成"
 
     - name: ⏱️ 自定义延迟（手动触发）
@@ -82,7 +106,8 @@ jobs:
         echo "✅ 延迟执行完成"
 
     - name: 🎲 周随机检查
-      if: github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun'
+      id: week_random_check
+      if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')
       run: |
         # 生成 0 到 6 之间的随机数
         CHECK=$((RANDOM % 7))
@@ -90,11 +115,15 @@ jobs:
         # 如果随机数不等于 0，则跳过周随机任务
         if [ $CHECK -ne 0 ]; then
           echo "⏭️ 跳过周随机任务"
+          echo "skipped=true" >> $GITHUB_OUTPUT
           exit 0
+        else
+          echo "🎉 触发周随机任务"
+          echo "skipped=false" >> $GITHUB_OUTPUT
         fi
-        echo "🎉 触发周随机任务"
 
     - name: 🔢 生成 READ_NUM
+      if: steps.week_random_check.outputs.skipped != 'true'
       run: |
         echo "::group::🔢 生成 READ_NUM"
         echo "=== 触发事件分析 ==="
@@ -103,8 +132,32 @@ jobs:
         echo "定时规则: ${{ github.event.schedule }}"
         echo "自定义时间: ${{ github.event.inputs.custom_time }}"
         echo "自定义延迟: ${{ github.event.inputs.custom_delay }}"
+        echo "调试定时任务: ${{ github.event.inputs.debug_schedule }}"
 
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          # 手动触发时，处理调试定时任务
+          if [[ "${{ github.event.inputs.debug_schedule }}" != "无" ]]; then
+            case "${{ github.event.inputs.debug_schedule }}" in
+              晚间任务)
+                SCHEDULE='0 14 * * *'
+                ;;
+              早间任务)
+                SCHEDULE='0 21 * * 0-4'
+                ;;
+              午间任务)
+                SCHEDULE='40 3 * * 1-5'
+                ;;
+              周末任务)
+                SCHEDULE='0 9 * * sat,sun'
+                ;;
+              周随机任务)
+                SCHEDULE='0 0 * * sat,sun'
+                ;;
+            esac
+          else
+            SCHEDULE="${{ github.event.schedule }}"
+          fi
+
           # 手动触发时，使用自定义时间（如果存在）
           if [[ -n "${{ github.event.inputs.custom_time }}" ]]; then
             # 若用户手动输入了自定义阅读时间，则将其乘以 2 作为 READ_NUM
@@ -119,9 +172,8 @@ jobs:
               echo "🕹️ 手动模式 | 范围: 60-120 (30-60分钟)"
             else
               # 手动触发 自动 模式时，使用默认的 自动 范围
-              SCHEDULE="${{ github.event.schedule }}"
               case "$SCHEDULE" in
-                '0 21 * * 1-5')
+                '0 21 * * 0-4')
                   # 早间任务（周一到周五 05:00 触发），生成 130 到 160 之间的随机数作为 READ_NUM
                   NUM=$((RANDOM % 31 + 130))
                   echo "🌅 早间任务 | 范围: 130-160"
@@ -158,7 +210,7 @@ jobs:
           # 自动触发（schedule）时，按原逻辑生成
           SCHEDULE="${{ github.event.schedule }}"
           case "$SCHEDULE" in
-            '0 21 * * 1-5')
+            '0 21 * * 0-4')
               # 早间任务（周一到周五 05:00 触发），生成 130 到 160 之间的随机数作为 READ_NUM
               NUM=$((RANDOM % 31 + 130))
               echo "🌅 早间任务 | 范围: 130-160"
@@ -197,6 +249,7 @@ jobs:
         echo "::endgroup::"
 
     - name: 🚀 执行主程序
+      if: steps.week_random_check.outputs.skipped != 'true'
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
       run: |
