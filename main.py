@@ -9,16 +9,12 @@ import urllib.parse
 from push import push
 from config import data, headers, cookies, READ_NUM, PUSH_METHOD, book_mapping
 
-# 展示书籍映射信息
+# 展示书籍信息
 print("📚 书籍映射表: {")
 for key, value in book_mapping.items():
     print(f'  "{key}": "{value}",')
 print("}")
-
-# 展示可用书籍 b 值
-print("📖 可用书籍 b 值:", list(book_mapping.keys()))
-
-# 获取当前阅读书籍名称
+print(f"📖 可用书籍 b 值: {list(book_mapping.keys())}")
 current_book = book_mapping.get(data["b"], "未知书籍")
 print(f"🎯 选定书籍: {current_book} (b值: {data['b']})")
 
@@ -105,3 +101,4 @@ if PUSH_METHOD not in (None, ''):
         logging.info("推送调用成功")
     except Exception as e:
         logging.error(f"推送发生异常: {e}")
+    
