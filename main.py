@@ -1,4 +1,3 @@
-# main.py 主逻辑：包括字段拼接、模拟请求
 import re
 import json
 import time
@@ -8,7 +7,20 @@ import hashlib
 import requests
 import urllib.parse
 from push import push
-from config import data, headers, cookies, READ_NUM, PUSH_METHOD
+from config import data, headers, cookies, READ_NUM, PUSH_METHOD, book_mapping
+
+# 展示书籍映射信息
+print("📚 书籍映射表: {")
+for key, value in book_mapping.items():
+    print(f'  "{key}": "{value}",')
+print("}")
+
+# 展示可用书籍 b 值
+print("📖 可用书籍 b 值:", list(book_mapping.keys()))
+
+# 获取当前阅读书籍名称
+current_book = book_mapping.get(data["b"], "未知书籍")
+print(f"🎯 选定书籍: {current_book} (b值: {data['b']})")
 
 # 配置日志格式
 logger = logging.getLogger(__name__)
@@ -19,6 +31,8 @@ KEY = "3c5c8717f3daf09iop3423zafeqoi"
 COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
 RENEW_URL = "https://weread.qq.com/web/login/renewal"
+
+logging.info(f"📖 当前阅读书籍: {current_book}")
 
 
 def encode_data(data):
@@ -59,14 +73,14 @@ while index <= READ_NUM:
     data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
     data['s'] = cal_hash(encode_data(data))
 
-    logging.info(f"⏱️ 尝试第 {index} 次阅读...")
+    logging.info(f"⏱️ 正在阅读《{current_book}》，第 {index} 次...")
     response = requests.post(READ_URL, headers=headers, cookies=cookies, data=json.dumps(data, separators=(',', ':')))
     resData = response.json()
 
     if 'succ' in resData:
         index += 1
         time.sleep(30)
-        logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
+        logging.info(f"✅ 阅读成功，累计阅读时长：{(index - 1) * 0.5} 分钟")
 
     else:
         logging.warning("❌ cookie 已过期，尝试刷新...")
@@ -76,14 +90,18 @@ while index <= READ_NUM:
             logging.info(f"✅ 密钥刷新成功，新密钥：{new_skey}")
             logging.info(f"🔄 重新本次阅读。")
         else:
-            ERROR_CODE = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
+            ERROR_CODE = "❌ 无法获取新密钥或者 WXREAD_CURL_BASH 配置有误，终止运行。"
             logging.error(ERROR_CODE)
             push(ERROR_CODE, PUSH_METHOD)
             raise Exception(ERROR_CODE)
     data.pop('s')
 
-logging.info("🎉 阅读脚本已完成！")
+logging.info(f"🎉 阅读完成！书籍：《{current_book}》")
 
 if PUSH_METHOD not in (None, ''):
     logging.info("⏱️ 开始推送...")
-    push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
+    try:
+        push(f"🎉 微信读书自动阅读完成！\n📖 书籍：《{current_book}》\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
+        logging.info("推送调用成功")
+    except Exception as e:
+        logging.error(f"推送发生异常: {e}")
