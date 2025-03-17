@@ -248,6 +248,11 @@ jobs:
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
         echo "::endgroup::"
 
+    - name: 📚 显示书籍信息
+      if: steps.week_random_check.outputs.skipped != 'true'
+      run: |
+        python config.py | grep -E '📚 书籍映射表|📖 可用书籍 b 值|🎯 选定书籍'
+
     - name: 🚀 执行主程序
       if: steps.week_random_check.outputs.skipped != 'true'
       env:
@@ -255,5 +260,4 @@ jobs:
       run: |
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
-        # 执行主程序
-        python main.py    
+        # 执行主程序    
