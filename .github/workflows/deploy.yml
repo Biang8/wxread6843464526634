@@ -1,4 +1,4 @@
-name: wxread
+name: lwxread
 
 # 定义工作流的触发条件
 on:
@@ -121,11 +121,6 @@ jobs:
           echo "🎉 触发周随机任务"
           echo "skipped=false" >> $GITHUB_OUTPUT
         fi
-
-    - name: 📚 显示书籍信息
-      if: steps.week_random_check.outputs.skipped != 'true'
-      run: |
-        python config.py | grep -E '📚 书籍映射表|📖 可用书籍 b 值|🎯 选定书籍'
 
     - name: 🔢 生成 READ_NUM
       if: steps.week_random_check.outputs.skipped != 'true'
@@ -257,8 +252,16 @@ jobs:
       if: steps.week_random_check.outputs.skipped != 'true'
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
+        PUSH_METHOD: ${{ secrets.PUSH_METHOD }}
+        PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        WXPUSHER_SPT: ${{ secrets.WXPUSHER_SPT }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        READ_NUM: ${{ env.READ_NUM }}
+        READ_COMPLETE_HEADER: ${{ secrets.READ_COMPLETE_HEADER }}  # 读取 GitHub Secrets 里的变量
       run: |
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
-        # 执行主程序，将 READ_NUM 作为参数传递
-        python main.py ${{ env.READ_NUM }}    
+        echo "READ_COMPLETE_HEADER: ${{ env.READ_COMPLETE_HEADER }}"
+        # 执行主程序
+        python main.py || { echo "❌ 主程序执行失败"; exit 1; }
