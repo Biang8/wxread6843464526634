@@ -60,7 +60,6 @@ jobs:
         echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
         echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
         echo "✅ DNS 配置完成"
-
     - name: 📥 检出仓库
       uses: actions/checkout@v4
       with:
@@ -80,7 +79,6 @@ jobs:
         pip list
         echo "::endgroup::"
         echo "✅ 依赖安装验证：$(pip list | grep requests)"
-
     - name: ⏱️ 随机延迟（自动模式或计划模式或手动触发调试模式无自定义延迟）
       if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == '自动' || github.event.inputs.debug_schedule != '无') && github.event.inputs.custom_delay == ''))
       run: |
@@ -90,7 +88,6 @@ jobs:
         echo "⏳ 生成的随机延迟：${DELAY_MINUTES} 分钟 ${DELAY_SECONDS} 秒"
         sleep $TOTAL_DELAY
         echo "✅ 延迟执行完成"
-
     - name: ⏱️ 自定义延迟（手动触发）
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.custom_delay != ''
       run: |
@@ -98,7 +95,6 @@ jobs:
         echo "⏳ 自定义延迟：${DELAY} 分钟"
         sleep $((DELAY * 60))
         echo "✅ 延迟执行完成"
-
     - name: 🎲 周随机检查
       id: week_random_check
       if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')
@@ -113,7 +109,6 @@ jobs:
           echo "🎉 触发周随机任务"
           echo "skipped=false" >> $GITHUB_OUTPUT
         fi
-
     - name: 🔢 生成 READ_NUM
       if: steps.week_random_check.outputs.skipped != 'true'
       run: |
@@ -124,7 +119,6 @@ jobs:
         echo "自定义时间: ${{ github.event.inputs.custom_time }}"
         echo "自定义延迟: ${{ github.event.inputs.custom_delay }}"
         echo "调试定时任务: ${{ github.event.inputs.debug_schedule }}"
-
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           if [[ "${{ github.event.inputs.debug_schedule }}" != "无" ]]; then
             case "${{ github.event.inputs.debug_schedule }}" in
@@ -147,7 +141,6 @@ jobs:
           else
             SCHEDULE="${{ github.event.schedule }}"
           fi
-
           if [[ -n "${{ github.event.inputs.custom_time }}" ]]; then
             NUM=$(( ${{ github.event.inputs.custom_time }} * 2 ))
             echo "🕹️ 手动触发 | 使用自定义时间: ${{ github.event.inputs.custom_time }} 分钟，等效 READ_NUM: $NUM"
@@ -213,11 +206,9 @@ jobs:
               ;;
           esac
         fi
-
         echo "✅ 最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
         echo "::endgroup::"
-
     - name: 🚀 执行主程序
       if: steps.week_random_check.outputs.skipped != 'true'
       env:
@@ -234,20 +225,16 @@ jobs:
         echo "READ_NUM: ${{ env.READ_NUM }}"
         echo "READ_COMPLETE_HEADER: ${{ env.READ_COMPLETE_HEADER }}"
         python main.py || { echo "❌ 主程序执行失败"; exit 1; }
-
-
     - name: 🗑️ 每周日清理日志
       if: github.event.schedule == '0 9 * * sun'
       run: |
           > run_data.log
-          echo "✅ run_data.log 已清空"
-
+          echo "✅ run_data.log 已清空"  
     - name: 📤 提交 run_data.log
       run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          if git diff --quiet run_data.log; then  
+          if git diff --quiet run_data.log; then
             echo "✅ 无变更，跳过提交"
           else
             git add run_data.log
