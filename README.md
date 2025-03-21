@@ -3,7 +3,7 @@
 **本项目基于 [findmover/wxread](https://github.com/findmover/wxread) 进行优化和扩展。**  
 使用 **GitHub Actions** 自动执行 **微信阅读任务**，支持 **定时触发** 和 **手动触发**，可自由配置 **阅读时间**、**执行延迟** 和 **调试定时任务**。  
 
-**⚠️ 注意：GitHub Actions 每月只有 2000 分钟的免费配额（公开仓库不受影响，fork默认公开。**
+**⚠️ 注意：GitHub Actions 每月只有 2000 分钟的免费配额（公开仓库不受影响，fork默认公开）。**
 
 ---
 
