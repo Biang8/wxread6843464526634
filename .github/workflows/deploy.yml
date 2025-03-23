@@ -63,7 +63,6 @@ jobs:
         echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
         echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
         echo "✅ DNS 配置完成"
-        
     - name: 📥 检出仓库
       uses: actions/checkout@v4
       with:
@@ -78,11 +77,10 @@ jobs:
       run: |
         echo "::group::📦 安装依赖"
         python -m pip install --upgrade pip
-        pip install --no-cache-dir -r requirements.txt  
+        pip install --no-cache-dir -r requirements.txt
         pip list
         echo "::endgroup::"
-        echo "✅ 依赖安装验证：$(pip list | grep requests)"  
-        
+        echo "✅ 依赖安装验证：$(pip list | grep requests)"
     - name: ⏱️ 随机延迟（自动模式或计划模式或手动触发调试模式无自定义延迟）
       if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == '自动' || github.event.inputs.debug_schedule != '无') && github.event.inputs.custom_delay == ''))
       run: |
@@ -92,7 +90,6 @@ jobs:
         echo "⏳ 生成的随机延迟：${DELAY_MINUTES} 分钟 ${DELAY_SECONDS} 秒"
         sleep $TOTAL_DELAY
         echo "✅ 延迟执行完成"
-        
     - name: ⏱️ 自定义延迟（手动触发）
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.custom_delay != ''
       run: |
@@ -100,7 +97,6 @@ jobs:
         echo "⏳ 自定义延迟：${DELAY} 分钟"
         sleep $((DELAY * 60))
         echo "✅ 延迟执行完成"
-        
     - name: 🎲 周随机检查
       id: week_random_check
       if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')  
@@ -233,7 +229,11 @@ jobs:
         echo "READ_NUM: ${{ env.READ_NUM }}"
         echo "READ_COMPLETE_HEADER: ${{ env.READ_COMPLETE_HEADER }}"
         python main.py || { echo "❌ 主程序执行失败"; exit 1; }
-
+    - name: 🗑️ 每周日清理日志
+      if: github.event.schedule == '0 9 * * sun'
+      run: |
+          > log.md
+          echo "✅ log.md 已清空"  
     - name: 📤 提交 log.md
       run: |
           # 使用加密的 GitHub Secrets 配置用户信息
