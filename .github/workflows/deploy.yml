@@ -1,4 +1,3 @@
-
 name: Defect number  
 
 on:
@@ -81,6 +80,7 @@ jobs:
         pip list
         echo "::endgroup::"
         echo "✅ 依赖安装验证：$(pip list | grep requests)"
+        
     - name: ⏱️ 随机延迟（自动模式或计划模式或手动触发调试模式无自定义延迟）
       if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == '自动' || github.event.inputs.debug_schedule != '无') && github.event.inputs.custom_delay == ''))
       run: |
@@ -90,6 +90,7 @@ jobs:
         echo "⏳ 生成的随机延迟：${DELAY_MINUTES} 分钟 ${DELAY_SECONDS} 秒"
         sleep $TOTAL_DELAY
         echo "✅ 延迟执行完成"
+        
     - name: ⏱️ 自定义延迟（手动触发）
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.custom_delay != ''
       run: |
@@ -97,9 +98,10 @@ jobs:
         echo "⏳ 自定义延迟：${DELAY} 分钟"
         sleep $((DELAY * 60))
         echo "✅ 延迟执行完成"
+        
     - name: 🎲 周随机检查
       id: week_random_check
-      if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')  
+      if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')    
       run: |
         CHECK=$((RANDOM % 7))
         echo "🎲 随机数：$CHECK (需要等于0)"
@@ -111,6 +113,7 @@ jobs:
           echo "🎉 触发周随机任务"
           echo "skipped=false" >> $GITHUB_OUTPUT
         fi
+        
     - name: 🔢 生成 READ_NUM
       if: steps.week_random_check.outputs.skipped != 'true'
       run: |
@@ -120,7 +123,7 @@ jobs:
         echo "事件类型: ${{ github.event_name }}"
         echo "输入模式: ${{ github.event.inputs.mode }}"
         echo "定时规则: ${{ github.event.schedule }}"
-        echo "自定义时间: ${{ github.event.inputs.custom_time }}"
+        echo "自定义时间: ${{ github.event.inputs.custom_time }}"  
         echo "自定义延迟: ${{ github.event.inputs.custom_delay }}"
         echo "调试定时任务: ${{ github.event.inputs.debug_schedule }}"
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -213,8 +216,9 @@ jobs:
         echo "✅ 最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
         echo "::endgroup::"
+        
     - name: 🚀 执行主程序
-      if: steps.week_random_check.outputs.skipped != 'true'
+      if: steps.week_random_check.outputs.skipped != 'true'  
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
         PUSH_METHOD: ${{ secrets.PUSH_METHOD }}
@@ -229,11 +233,13 @@ jobs:
         echo "READ_NUM: ${{ env.READ_NUM }}"
         echo "READ_COMPLETE_HEADER: ${{ env.READ_COMPLETE_HEADER }}"
         python main.py || { echo "❌ 主程序执行失败"; exit 1; }
+        
     - name: 🗑️ 每周日清理日志
       if: github.event.schedule == '0 9 * * sun'
       run: |
           > log.md
           echo "✅ log.md 已清空"  
+          
     - name: 📤 提交 log.md
       run: |
           # 使用加密的 GitHub Secrets 配置用户信息
