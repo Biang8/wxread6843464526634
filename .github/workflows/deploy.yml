@@ -102,7 +102,7 @@ jobs:
 
     - name: 🎲 周随机检查
       id: week_random_check
-      if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')
+      if: (github.event_name == 'schedule' && github.event.schedule == '0 0 * * sat,sun') || (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_schedule == '周随机任务')  
       run: |
         CHECK=$((RANDOM % 7))
         echo "🎲 随机数：$CHECK (需要等于0)"
@@ -118,6 +118,8 @@ jobs:
     - name: 🔢 生成 READ_NUM
       if: steps.week_random_check.outputs.skipped != 'true'
       run: |
+        BEIJING_TIME=$(date -u -d '+8 hours' +'%Y-%m-%d %H:%M:%S')
+        echo "当前北京时间: $BEIJING_TIME - 开始生成 READ_NUM"
         echo "::group::🔢 生成 READ_NUM"
         echo "事件类型: ${{ github.event_name }}"
         echo "输入模式: ${{ github.event.inputs.mode }}"
@@ -236,12 +238,11 @@ jobs:
         echo "READ_COMPLETE_HEADER: ${{ env.READ_COMPLETE_HEADER }}"
         python main.py || { echo "❌ 主程序执行失败"; exit 1; }
 
-
     - name: 🗑️ 每周日清理日志
       if: github.event.schedule == '0 9 * * sun'
       run: |
           > log.md
-          echo "✅ log.md 已清空"
+          echo "✅ log.md 已清空"  
 
     - name: 📤 提交 log.md
       run: |
